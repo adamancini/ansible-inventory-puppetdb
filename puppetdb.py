@@ -41,6 +41,8 @@ CONFIG_FILES = [
     os.path.expanduser(os.environ.get('ANSIBLE_PUPPETDB_CONFIG',
                                       "~/puppetdb.yml")),
     os.getcwd() + '/puppetdb.yml',
+    os.getcwd() + '/hosts/puppetdb.yml',
+    os.getcwd() + '/ansible/hosts/puppetdb.yml',
     '/etc/ansible/puppetdb.yml'
 ]
 
@@ -75,7 +77,6 @@ class PuppetdbInventory(object):
 
         puppetdb_config = {
             'host': self.config.get('host'),
-            'api_version': self.config.get('api_version'),
             'port': self.config.get('port'),
             'timeout': self.config.get('timeout'),
             'ssl_verify': self.config.get('ssl_verify'),
@@ -139,23 +140,9 @@ class PuppetdbInventory(object):
             for fact in node.facts()
         }
 
-        facts['ansible_ssh_host'] = node.fact('fqdn').value
+        facts['ansible_ssh_host'] = facts['fqdn']
 
         return facts
-
-    def fetch_tag_results(self, tag_lookup):
-        """
-        Fetch all hosts based upon resource type tag
-        """
-        hosts = []
-
-        for resource_type, tag in tag_lookup.iteritems():
-            resources = self.puppetdb.resources(
-                type_="{0}".format(resource_type),
-                query='["=", "tag", "{0}"]'.format(tag))
-            for host in resources:
-                hosts.append(host.node)
-        return hosts
 
     def fetch_host_list(self):
         """
@@ -167,33 +154,25 @@ class PuppetdbInventory(object):
         groups['all']['hosts'] = list()
 
         group_by = self.config.get('group_by')
-        group_by_tag = self.config.get('group_by_tag')
 
         for node in self.puppetdb.nodes():
             server = str(node)
 
-            if group_by is not None:
-                try:
-                    fact_value = node.fact(group_by).value
-                    if fact_value not in groups:
-                        groups[fact_value]['hosts'] = list()
-                    groups[fact_value]['hosts'].append(server)
-                except StopIteration:
-                    # This fact does not exist on the server
-                    if 'unknown' not in groups:
-                        groups['unknown']['hosts'] = list()
-                    groups['unknown']['hosts'].append(server)
-
-            if group_by_tag:
-                for entry in group_by_tag:
-                    for resource_type, tag in entry.iteritems():
-                        tag_lookup = { resource_type: tag }
-                        tagged_hosts = self.fetch_tag_results(tag_lookup)
-                        group_key = tag
-                        if server in tagged_hosts:
-                            if group_key not in groups:
-                                groups[group_key]['hosts'] = list()
-                            groups[group_key]['hosts'].append(server)
+            facts = self.fetch_host_facts(server)
+            if group_by:
+                for fact_name in group_by:
+                    if fact_name in facts and facts[fact_name]:
+                        fact_value = facts[fact_name]
+                        group_key= '%s_%s' % (fact_name,fact_value)
+                        if group_key not in groups:
+                            groups[group_key]['hosts'] = list()
+                        groups[group_key]['hosts'].append(server)
+                    else:
+                        # This fact does not exist on the server
+                        group_key = '%s_UNKNOWN' % fact_name
+                        if group_key not in groups:
+                            groups[group_key]['hosts'] = list()
+                        groups[group_key]['hosts'].append(server)
 
             groups['all']['hosts'].append(server)
             hostvars[server] = self.fetch_host_facts(server)
