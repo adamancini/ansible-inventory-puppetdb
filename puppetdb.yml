@@ -49,8 +49,8 @@
 # always return a group called 'all' with all the hosts in it.
 #
 ---
-host: <%= ENV['PUPPETDB_HOST'] %>
-port: <%= ENV['PUPPETDB_PORT'] %>
+host: puppetdb
+port: 8080
 timeout: 10
 ssl_verify: <%= ENV['SSL_VERIFY'] %>
 ssl_key: <%= ENV['SSL_KEY'] %>
