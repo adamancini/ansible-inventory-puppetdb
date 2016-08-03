@@ -49,13 +49,13 @@
 # always return a group called 'all' with all the hosts in it.
 #
 ---
-host: localhost
-port: 8080
+host: <%= ENV['PUPPETDB_HOST'] %>
+port: <%= ENV['PUPPETDB_PORT'] %>
 timeout: 10
-ssl_verify: False
-ssl_key:
-ssl_cert:
+ssl_verify: <%= ENV['SSL_VERIFY'] %>
+ssl_key: <%= ENV['SSL_KEY'] %>
+ssl_cert: <%= ENV['SSL_CERT'] %>
 cache_file: '/tmp/ansible-inventory-puppetdb.cache'
 cache_duration: 30
-group_by:
+group_by: 'ansible_distribution'
 group_by_tag:
