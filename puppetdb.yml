@@ -49,7 +49,7 @@
 # always return a group called 'all' with all the hosts in it.
 #
 ---
-host: localhost
+host: puppetdb
 port: 8080
 timeout: 10
 ssl_verify: False
