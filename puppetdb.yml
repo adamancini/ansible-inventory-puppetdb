@@ -33,7 +33,7 @@
 #
 ---
 host: puppetdb
-port: 8081
+port: 8080
 timeout: 10
 ssl_verify: False
 ssl_key:
